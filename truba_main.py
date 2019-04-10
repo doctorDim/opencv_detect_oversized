@@ -246,7 +246,8 @@ def image_rezhim(image):
                 # координаты по X середины стороны
                 dlina_vektora = (approx[2][0] + approx[1][0]) / 2
                 previshenie(dlina_vektora, edge1, edge2)
-
+        
+        break
         #else:
             #print('Количество вершин не равно 4.')
 
