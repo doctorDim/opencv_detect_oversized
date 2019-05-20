@@ -19,7 +19,7 @@ args = vars(ap.parse_args())
 
 print(args)
 
-# страт мотора
+# старт мотора
 def motor_stop(stop):
     ser.write("1".encode())
     print("Движение: ", stop)
@@ -56,25 +56,25 @@ def okno():
     root.title("ВНИМАНИЕ!")
     root.geometry("300x250")
 
+    # запуск ленты
     def ex(event):
         root.destroy()
         motor_start("СТАРТ")
-        #print("test !")
 
     text = Text(width=50, height=10)
     text.pack()
     text.insert(1.0, "Внимание!\nПревышение допустимых габатитов.\nУберите объект и нажмите Возобновить")
 
     btn = Button(root,
-            text="Возобновить",# текст кнопки
-            background="#555",# фоновый цвет кнопки
-            foreground="#ccc",# цвет текста
-            padx="20",# отступ от границ до содержимого по горизонтали
-            pady="8",# отступ от границ до содержимого по вертикали
-            font="16"# высота шрифта
+            text="Возобновить", # текст кнопки
+            background="#555",  # фоновый цвет кнопки
+            foreground="#ccc",  # цвет текста
+            padx="20",          # отступ от границ до содержимого по горизонтали
+            pady="8",           # отступ от границ до содержимого по вертикали
+            font="16"           # высота шрифта
             )
+    # действие по нажатию кнопки
     btn.bind("<Button-1>", ex)
-    #btn.bind("<Button-1>", motor(0), add="+")
     btn.pack()
 
     root.mainloop()
@@ -86,7 +86,7 @@ def setka(image):
 
 # Изменение разрешения картинки
 def resize(image):
-    scale_percent = 10 # percent of original size
+    scale_percent = 10 # процент от оригинального изображения
     width = int(image.shape[1] * scale_percent / 100)
     height = int(image.shape[0] * scale_percent / 100)
     dim = (width, height)
@@ -105,7 +105,7 @@ def obrez(image):
     roi = image[Y1:Y1+Y2, X1:X1+X2] # img[y:y+h, x:x+w]
     return roi
 
-# Маска
+# Маска для изображения полезной области
 def region(image):
     X1 = config.X1_AREA
     X2 = config.X2_AREA
@@ -126,27 +126,30 @@ def region(image):
     return masked_image
 
 def previshenie(storona, edge1, edge2):
-    #seredina_vektora = storona / 2
+    #середина вектора = сторона / 2
     seredina_oblasti = (config.X2_AREA - config.X1_AREA) / 2
     #print("Середина области: ", seredina_oblasti)
     #print("Середина детали: ", storona)
 
-    # пересечение центра области\
+    # пересечение центра области
     # +- несколько пикселей для погрешности
-    #if (seredina_oblasti == storona):
     if (storona > seredina_oblasti-5) & (storona < seredina_oblasti+5):
 
         # проверяем на превышение
         if (edge1 >= max.MAX) | (edge2 >= max.MAX):
             print('Превышение допустимого размера!!!')
+            # запись о превышении ф файл
             handle = open("logs/Report.log", "a")
             now = datetime.datetime.now()
             handle.write(now.strftime("%d-%m-%Y %H:%M:%S") + " Превышение допустимого размера!!!\n")
             handle.close()
 
+            # сохранение изображения с превышением
             cv2.imwrite("Output/truba-" + now.strftime("%d-%m-%Y %H:%M:%S") + ".jpg", img)
 
+            # остановка движения ленты
             motor_stop("СТОП")
+            # сообщение о превышении для дальнейшего устранения
             okno()
 
             #print('Длина стороны 1: ', np.int0(edge1))
@@ -156,8 +159,6 @@ def previshenie(storona, edge1, edge2):
             #print('Количество вершин: ', len(approx))
             #print('Количество четырехугольников: ', format(i))
         return
-    #else:
-        #print("Нет пересечения с серединой")
 
 # Режим видео
 def video_rezhim(cap):
@@ -174,7 +175,7 @@ def video_rezhim(cap):
 def image_rezhim(image):
     img = np.copy(image)
 
-    # filter out small lines between counties
+    # отфильтровать небольше линии
     kernel = np.ones((5,5),np.float32)/25
     img = cv2.filter2D(img,-1,kernel)
 
@@ -186,13 +187,13 @@ def image_rezhim(image):
     ret, thresh = cv2.threshold(blur, 150, 255, cv2.THRESH_BINARY_INV)
 
     contours, hierarchy = cv2.findContours(thresh.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+
     # для количества четырехугольников
     i = 0
 
     for cnt in contours:
         approx = cv2.approxPolyDP(cnt, 0.04*cv2.arcLength(cnt, True), True)
         #print len(approx)
-        #if len(approx) == 4:)
         if len(approx) == 4:
             i += 1
             cv2.drawContours(img, [cnt], 0, (0, 255, 0), 3)
@@ -218,8 +219,8 @@ def image_rezhim(image):
             cv2.circle(img, (approx[2][0],approx[2][1]), 5, (0, 0, 255), 2)
             cv2.circle(img, (approx[3][0],approx[3][1]), 5, (0, 0, 255), 2)
 
-            # сравнивается длина двух сторон (дольшой и соседней маленькой, например)
-            # ведем до середины по большей стороне
+            # сравниваем длину двух сторон (большой и соседней маленькой, например)
+            # ведем четырехугольник для остановки до середины экрана по бОльшей стороне
             if edge1 >= edge2:
                 # координаты по X середины стороны
                 dlina_vektora = (approx[1][0] + approx[0][0]) / 2
@@ -231,12 +232,10 @@ def image_rezhim(image):
                 previshenie(dlina_vektora, edge1, edge2)
 
         break
-        #else:
-            #print('Количество вершин не равно 4.')
 
     #print('Количество контуров: ', format(len(contours)))
 
-    # display the total number of shapes on the image
+    # отображение общего количества четырехугольников на изображении
     text = "Found {} total rectangle". format(i)
     cv2.putText(img, text, (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
@@ -258,7 +257,8 @@ def image_rezhim(image):
 
     return img
 
-# Выбор режима работы между изображением и Web камерой в зависимости от параметров запуска
+# Выбор режима работы в зависимости от параметров запуска:
+
 if args["image"] is not None:
     image = cv2.imread(args["image"])
     #cv2.imwrite("Original.jpg", image)
@@ -289,11 +289,11 @@ if args["camera"] is not None:
         cv2.imshow('Contours', img)
 
         # наложение изображений
-        # combo_image = cv2.addWeighted(frame, 1, img, 0.8)
-        # cv2.imshow("Out", combo_image)
+        #combo_image = cv2.addWeighted(frame, 1, img, 0.8)
+        #cv2.imshow("Out", combo_image)
         # или
-        # vis = np.concatenate((frame, img), axis=1)
-        # cv2.imwrite('out.png', vis)
+        #vis = np.concatenate((frame, img), axis=1)
+        #cv2.imwrite('out.png', vis)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
