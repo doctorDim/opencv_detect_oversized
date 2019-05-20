@@ -9,7 +9,6 @@ import serial # последовательный порт
 from Config import config # файл с координатами полезной области
 from Config import max # файл с максимальным размером
 from tkinter import * # окно с кнопкой
-#from PIL import Image
 
 ap = argparse.ArgumentParser(description='Программа определения превышения габаритов.')
 ap.add_argument("-i", "--image", required = False, help = "Имя изображения. Режим работы с изображением.")
@@ -32,40 +31,24 @@ def motor_start(start):
     print("Движение: ", start)
 
     '''
-    ser=serial.Serial()
+    # Настройка параметров последовательного порта
+    ser = serial.Serial()
     ser.port = "/dev/ttyACM0"
     ser.baudrate = 9600
-    ser.bytesize = serial.EIGHTBITS #number of bits per bytes
-    ser.parity = serial.PARITY_NONE #set parity check: no parity
-    ser.stopbits = serial.STOPBITS_ONE #number of stop bits
-    #ser.timeout = None          #block read
-    ser.timeout = 1            #non-block read
-    #ser.timeout = 2              #timeout block read
-    ser.xonxoff = False     #disable software flow control
-    ser.rtscts = False     #disable hardware (RTS/CTS) flow control
-    ser.dsrdtr = False       #disable hardware (DSR/DTR) flow control
-    ser.writeTimeout = 2     #timeout for write
+    ser.bytesize = serial.EIGHTBITS     #number of bits per bytes
+    ser.parity = serial.PARITY_NONE     #set parity check: no parity
+    ser.stopbits = serial.STOPBITS_ONE  #number of stop bits
+    #ser.timeout = None                 #block read
+    ser.timeout = 1                     #non-block read
+    #ser.timeout = 2                    #timeout block read
+    ser.xonxoff = False                 #disable software flow control
+    ser.rtscts = False                  #disable hardware (RTS/CTS) flow control
+    ser.dsrdtr = False                  #disable hardware (DSR/DTR) flow control
+    ser.writeTimeout = 2                #timeout for write
     ser = serial.Serial('/dev/ttyACM0', 9600)
     print('Enter 1 or 0...')
     ser.write("1")
     '''
-'''
-    #ser = serial.Serial('/dev/ttyACM0',9600,timeout=5)
-    #ser.isOpen()
-    #1 вкл, 0 выкл PIN13 на Arduino
-    #ser.write(stop.encode())
-    if (stop == 1):
-        ser.write("1".encode())
-        #ser.write('1')
-        print("Motor: ", stop)
-
-    else:
-    #if (stop == 0):
-        ser.write("0",encode())
-        #ser.write('0')
-        print("Motor: ",stop)
-
-    return stop'''
 
 # окно при превышении габаритов
 def okno():
@@ -246,7 +229,7 @@ def image_rezhim(image):
                 # координаты по X середины стороны
                 dlina_vektora = (approx[2][0] + approx[1][0]) / 2
                 previshenie(dlina_vektora, edge1, edge2)
-        
+
         break
         #else:
             #print('Количество вершин не равно 4.')
@@ -290,7 +273,7 @@ if args["image"] is not None:
 if args["camera"] is not None:
     cap = cv2.VideoCapture(args["camera"])
 
-    #инициализация последовательного поста
+    # инициализация последовательного порта
     ser = serial.Serial('/dev/ttyACM0',9600,timeout=5)
     ser.isOpen()
     motor_start("СТАРТ")
@@ -305,12 +288,12 @@ if args["camera"] is not None:
         img = image_rezhim(image)
         cv2.imshow('Contours', img)
 
-        #наложение изображений
-        #combo_image = cv2.addWeighted(frame, 1, img, 0.8)
-        #cv2.imshow("Out", combo_image)
+        # наложение изображений
+        # combo_image = cv2.addWeighted(frame, 1, img, 0.8)
+        # cv2.imshow("Out", combo_image)
         # или
-        #vis = np.concatenate((frame, img), axis=1)
-        #cv2.imwrite('out.png', vis)
+        # vis = np.concatenate((frame, img), axis=1)
+        # cv2.imwrite('out.png', vis)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -319,10 +302,6 @@ if args["camera"] is not None:
     cv2.destroyAllWindows()
 
 if args["setka"] is not None:
-    #для изображения
-    #image = cv2.imread(args["setka"])
-    #setka(image)
-
     cap = cv2.VideoCapture(args["setka"])
 
     while(cap.isOpened()):
@@ -335,16 +314,15 @@ if args["setka"] is not None:
         if k%256 == ord('q'):
             break
         elif k%256 == ord('s'):
-            print('STOP')
             image = np.copy(frame)
             r = cv2.selectROI(image)
             print(r)
-            # Crop image
+            # выделение полезной области
             imCrop = image[int(r[1]):int(r[1]+r[3]), int(r[0]):int(r[0]+r[2])] # img[y:y+h, x:x+w]
             width = int(imCrop.shape[1])
             height = int(imCrop.shape[0])
             print('Размер области: ', width, height)
-            # Display cropped image
+            # вывод изображения полезной области
             cv2.destroyAllWindows()
             cv2.imshow("Image", imCrop)
             # запись координат в файл полезной области
@@ -359,7 +337,6 @@ if args["setka"] is not None:
     cv2.destroyAllWindows()
 
 if args["razmer"] is not None:
-
     cap = cv2.VideoCapture(args["razmer"])
 
     while(cap.isOpened()):
@@ -374,17 +351,15 @@ if args["razmer"] is not None:
         if k%256 == ord('q'):
             break
         elif k%256 == ord('s'):
-            print('STOP')
-            #image = np.copy(frame)
             image = np.copy(img)
             r = cv2.selectROI(image)
             print(r)
-            # Crop image
+            # выделение максимального размера предмета
             imCrop = image[int(r[1]):int(r[1]+r[3]), int(r[0]):int(r[0]+r[2])] # img[y:y+h, x:x+w]
             width = int(imCrop.shape[1])
             height = int(imCrop.shape[0])
             print('Размер области: ', width, height)
-            # Display cropped image
+            # вывод изображения максимального размера предмета
             cv2.destroyAllWindows()
             cv2.imshow("Image", imCrop)
             # запись максимального количества пикселей
