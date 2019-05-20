@@ -1,10 +1,10 @@
-# opencv_detect_oversized
-Detect oversized
+# Автоматическое определение превышения габаритов с помощью компьютерного зрения
+Задача: определить на конвейере трубу с превышением габаритов
 
-# QUICK START
-1.  The definition of a detection area:
+# Режимы работы:
+1.  Определение полезной области на конвейерной ленте:
 *  python truba_main.py -s 1
-2.  The determination of the excess length:
+2.  Определение максимальных габаритов:
 *  python truba_main.py -r 1
-3.  Program start:
+3.  Рабочий режим:
 *  python truba_main.py -c 1
