@@ -9,6 +9,7 @@ import serial # последовательный порт
 from Config import config # файл с координатами полезной области
 from Config import max # файл с максимальным размером
 from tkinter import * # окно с кнопкой
+import imutils
 
 ap = argparse.ArgumentParser(description='Программа определения превышения габаритов.')
 ap.add_argument("-i", "--image", required = False, help = "Имя изображения. Режим работы с изображением.")
@@ -176,17 +177,19 @@ def image_rezhim(image):
     img = np.copy(image)
 
     # отфильтровать небольше линии
-    kernel = np.ones((5,5),np.float32)/25
-    img = cv2.filter2D(img,-1,kernel)
+    #kernel = np.ones((5,5),np.float32)/25
+    #img = cv2.filter2D(img,-1,kernel)
 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     blur = cv2.GaussianBlur(gray, (5, 5), 0)
     #canny = cv2.Canny(gray, 50, 150)
     canny = cv2.Canny(blur, 40, 10)
 
-    ret, thresh = cv2.threshold(blur, 150, 255, cv2.THRESH_BINARY_INV)
+    ret, thresh = cv2.threshold(blur, 60, 255, cv2.THRESH_BINARY_INV)
 
-    contours, hierarchy = cv2.findContours(thresh.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    #contours, hierarchy = cv2.findContours(thresh.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    contours = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours = imutils.grab_contours(contours)
 
     # для количества четырехугольников
     i = 0
